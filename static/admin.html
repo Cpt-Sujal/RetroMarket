@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Retro Market — Admin Control Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-neutral-950 text-white min-h-screen font-sans p-4 sm:p-8">
+    <div class="max-w-5xl mx-auto space-y-6">
+      <!-- Header -->
+      <div class="flex flex-wrap items-center justify-between gap-4 bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
+            Retro Market — Organizer Admin Panel
+          </h1>
+          <p class="text-neutral-400 text-sm mt-1">
+            Control all connected display screens in real time (Start, Pause, Reset, Jump to Round)
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <a
+            href="/"
+            target="_blank"
+            class="px-4 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-sm font-medium border border-neutral-700 transition"
+          >
+            Open Live Screen ↗
+          </a>
+        </div>
+      </div>
+
+      <!-- PIN & Status Bar -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+          <p class="text-xs uppercase tracking-wider text-neutral-400">Competition Status</p>
+          <div class="mt-2 flex items-center gap-2">
+            <span id="status-dot" class="w-3 h-3 rounded-full bg-yellow-500"></span>
+            <span id="status-text" class="text-xl font-bold">PAUSED (READY)</span>
+          </div>
+        </div>
+
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+          <p class="text-xs uppercase tracking-wider text-neutral-400">Current Round / Total</p>
+          <p class="mt-2 text-2xl font-bold">
+            <span id="current-round">0</span>
+            <span class="text-neutral-500 text-lg">/ <span id="max-round">420</span></span>
+          </p>
+          <p class="text-xs text-neutral-400 mt-1" id="elapsed-time-label">0m 0s / 140m</p>
+        </div>
+
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+          <p class="text-xs uppercase tracking-wider text-neutral-400">Next Price Update In</p>
+          <p class="mt-2 text-2xl font-bold text-emerald-400" id="next-tick-countdown">--</p>
+          <p class="text-xs text-neutral-400 mt-1">Interval: <span id="interval-label">20</span>s per round</p>
+        </div>
+
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+          <p class="text-xs uppercase tracking-wider text-neutral-400">Connected Screens (SSE)</p>
+          <p class="mt-2 text-2xl font-bold text-sky-400" id="connected-screens">0</p>
+          <p class="text-xs text-neutral-400 mt-1">Plus auto-synced polling screens</p>
+        </div>
+      </div>
+
+      <!-- Main Action Controls -->
+      <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-800 pb-4">
+          <h2 class="text-lg font-semibold">Live Event Controls</h2>
+          <div class="flex items-center gap-2">
+            <label for="admin-pin" class="text-sm text-neutral-400">Admin PIN:</label>
+            <input
+              id="admin-pin"
+              type="password"
+              value="1234"
+              placeholder="Default: 1234"
+              class="w-32 px-3 py-1.5 rounded-lg bg-neutral-950 border border-neutral-700 text-sm text-white focus:outline-none focus:border-sky-500"
+            />
+          </div>
+        </div>
+
+        <!-- Primary Buttons -->
+        <div class="flex flex-wrap gap-4">
+          <button
+            onclick="sendAction('start')"
+            class="flex-1 min-w-[180px] py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 font-bold text-white shadow-lg transition flex items-center justify-center gap-2"
+          >
+            ▶ START / RESUME
+          </button>
+
+          <button
+            onclick="sendAction('pause')"
+            class="flex-1 min-w-[180px] py-3.5 px-6 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-700 font-bold text-white shadow-lg transition flex items-center justify-center gap-2"
+          >
+            ⏸ PAUSE SCREENS
+          </button>
+
+          <button
+            onclick="if(confirm('Reset competition back to Round 0 (0m) and pause?')) sendAction('reset')"
+            class="flex-1 min-w-[180px] py-3.5 px-6 rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 font-bold text-white shadow-lg transition flex items-center justify-center gap-2"
+          >
+            ⏮ RESET TO ROUND 0
+          </button>
+        </div>
+
+        <!-- Quick Checkpoint Jump Buttons -->
+        <div class="pt-2">
+          <p class="text-sm text-neutral-400 mb-2">
+            Quick Jump to Time / Round Checkpoint:
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="jumpToRound(0)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium">0m (R0)</button>
+            <button onclick="jumpToRound(60)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium">20m (R60)</button>
+            <button onclick="jumpToRound(90)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium">30m (R90 - JIO/WIPRO Peak)</button>
+            <button onclick="jumpToRound(120)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium">40m (R120)</button>
+            <button onclick="jumpToRound(180)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium">60m (R180)</button>
+            <button onclick="jumpToRound(240)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium">80m (R240)</button>
+            <button onclick="jumpToRound(300)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium">100m (R300)</button>
+            <button onclick="jumpToRound(360)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium">120m (R360)</button>
+            <button onclick="jumpToRound(420)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium">140m (R420 - End)</button>
+          </div>
+        </div>
+
+        <!-- Custom Jump & Speed Settings -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-neutral-800">
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-neutral-400">Custom Round (0-420):</label>
+            <input
+              id="custom-round-input"
+              type="number"
+              min="0"
+              max="420"
+              value="0"
+              class="w-24 px-3 py-1.5 rounded-lg bg-neutral-950 border border-neutral-700 text-sm"
+            />
+            <button
+              onclick="jumpToRound(Number(document.getElementById('custom-round-input').value))"
+              class="px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-sm font-semibold"
+            >
+              Jump
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-neutral-400">Speed (sec/round):</label>
+            <input
+              id="speed-sec-input"
+              type="number"
+              min="1"
+              max="300"
+              value="20"
+              class="w-24 px-3 py-1.5 rounded-lg bg-neutral-950 border border-neutral-700 text-sm"
+            />
+            <button
+              onclick="setSpeed(Number(document.getElementById('speed-sec-input').value))"
+              class="px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-sm font-semibold"
+            >
+              Update Speed
+            </button>
+          </div>
+        </div>
+
+        <p id="action-feedback" class="text-sm text-emerald-400 hidden"></p>
+      </div>
+
+      <!-- Live Stock Preview Table -->
+      <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
+        <h2 class="text-lg font-semibold mb-4">Live Board Preview (What All 10 Screens Are Showing Right Now)</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-neutral-800 text-neutral-400 text-xs uppercase">
+                <th class="py-2 px-3">#</th>
+                <th class="py-2 px-3">Stock</th>
+                <th class="py-2 px-3 text-right">Start Price (R0)</th>
+                <th class="py-2 px-3 text-right">Current Price</th>
+                <th class="py-2 px-3 text-right">Last Tick Change</th>
+                <th class="py-2 px-3 text-right">Total Return Since Start</th>
+              </tr>
+            </thead>
+            <tbody id="preview-table-body" class="divide-y divide-neutral-800 text-sm"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function showFeedback(msg, isError = false) {
+        const el = document.getElementById("action-feedback");
+        el.textContent = msg;
+        el.className = `text-sm ${isError ? "text-rose-400" : "text-emerald-400"}`;
+        el.classList.remove("hidden");
+        setTimeout(() => el.classList.add("hidden"), 4000);
+      }
+
+      async function sendAction(action, extra = {}) {
+        const pin = document.getElementById("admin-pin").value;
+        try {
+          const res = await fetch("/api/admin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pin, action, ...extra }),
+          });
+          const json = await res.json();
+          if (!res.ok) {
+            showFeedback(json.error || "Action failed", true);
+            return;
+          }
+          showFeedback(`Action '${action}' applied! Round: ${json.index}`);
+          refreshState();
+        } catch (err) {
+          showFeedback("Network error: " + err.message, true);
+        }
+      }
+
+      function jumpToRound(round) {
+        sendAction("jump", { round });
+      }
+
+      function setSpeed(seconds) {
+        if (!seconds || seconds < 1) return;
+        sendAction("speed", { roundDurationMs: seconds * 1000 });
+      }
+
+      async function refreshState() {
+        try {
+          const res = await fetch("/api/state");
+          const state = await res.json();
+
+          const dot = document.getElementById("status-dot");
+          const statusText = document.getElementById("status-text");
+          if (state.isRunning) {
+            dot.className = "w-3 h-3 rounded-full bg-emerald-500 animate-pulse";
+            statusText.textContent = "LIVE / RUNNING";
+            statusText.className = "text-xl font-bold text-emerald-400";
+          } else if (state.index >= state.maxRound) {
+            dot.className = "w-3 h-3 rounded-full bg-sky-500";
+            statusText.textContent = "FINISHED (FINAL ROUND)";
+            statusText.className = "text-xl font-bold text-sky-400";
+          } else {
+            dot.className = "w-3 h-3 rounded-full bg-yellow-500";
+            statusText.textContent = "PAUSED / WAITING";
+            statusText.className = "text-xl font-bold text-yellow-400";
+          }
+
+          document.getElementById("current-round").textContent = state.index;
+          document.getElementById("max-round").textContent = state.maxRound;
+          const mins = Math.floor((state.index * (state.roundDurationMs / 1000)) / 60);
+          const secs = Math.floor((state.index * (state.roundDurationMs / 1000)) % 60);
+          const totalMins = Math.floor((state.maxRound * (state.roundDurationMs / 1000)) / 60);
+          document.getElementById("elapsed-time-label").textContent = `${mins}m ${secs}s / ${totalMins}m`;
+
+          document.getElementById("interval-label").textContent = (
+            state.roundDurationMs / 1000
+          ).toFixed(0);
+          document.getElementById("next-tick-countdown").textContent = state.isRunning
+            ? `${Math.ceil(state.msUntilNextRound / 1000)}s`
+            : "Paused";
+          document.getElementById("connected-screens").textContent =
+            state.connectedClients ?? 0;
+
+          if (Array.isArray(state.stockData)) {
+            const tbody = document.getElementById("preview-table-body");
+            tbody.innerHTML = state.stockData
+              .map((s, idx) => {
+                const startP = s.startPrice || s.history?.[0] || s.close;
+                const totalRet = (((s.close - startP) / startP) * 100).toFixed(2);
+                const tickChg = Number(s.change).toFixed(2);
+                const isTickPos = Number(s.change) >= 0;
+                const isTotPos = Number(totalRet) >= 0;
+                return `
+                  <tr class="hover:bg-neutral-800/40">
+                    <td class="py-2.5 px-3 text-neutral-400">${idx + 1}</td>
+                    <td class="py-2.5 px-3 font-bold text-white">${s.ticker}</td>
+                    <td class="py-2.5 px-3 text-right text-neutral-400">₹${Number(startP).toFixed(2)}</td>
+                    <td class="py-2.5 px-3 text-right font-semibold text-white">₹${Number(s.close).toFixed(2)}</td>
+                    <td class="py-2.5 px-3 text-right ${isTickPos ? "text-emerald-400" : "text-rose-400"}">
+                      ${isTickPos ? "+" : ""}${tickChg}%
+                    </td>
+                    <td class="py-2.5 px-3 text-right font-semibold ${isTotPos ? "text-emerald-400" : "text-rose-400"}">
+                      ${isTotPos ? "+" : ""}${totalRet}%
+                    </td>
+                  </tr>
+                `;
+              })
+              .join("");
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      refreshState();
+      setInterval(refreshState, 1000);
+    </script>
+  </body>
+</html>

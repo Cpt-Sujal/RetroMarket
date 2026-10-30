@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Retro Market</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/preline@2.1/dist/preline.min.js"></script>
+    <script>
+      localStorage.setItem("hs_theme", "dark");
+    </script>
+  </head>
+
+  <body class="bg-neutral-900 dark:bg-neutral-900">
+    <div class="max-w-2xl mx-auto text-center pt-2 flex items-center">
+      <h2
+        class="text-2xl font-bold sm:text-3xl md:text-4xl text-white dark:text-white flex-grow"
+      >
+        Retro Market
+      </h2>
+      <p class="text-right text-2xl text-white dark:text-white ml-auto" id="index">0</p>
+    </div>
+
+    <div class="max-w-[85rem] px-4 py-10 sm:px-6 lg:px-8 lg:py-8 mx-auto">
+      <!-- Card Section -->
+      <!-- First row with 3 cards -->
+      <div id="card-section-row1" class="grid grid-cols-3 gap-4 sm:gap-6 mb-6">
+        <!-- Cards will be dynamically generated here -->
+      </div>
+
+      <!-- Second row with 4 cards -->
+      <div id="card-section-row2" class="grid grid-cols-4 gap-4 sm:gap-6 mb-6">
+        <!-- Cards will be dynamically generated here -->
+      </div>
+
+      <!-- Third row with 3 cards -->
+      <div id="card-section-row3" class="grid grid-cols-3 gap-4 sm:gap-6">
+        <!-- Cards will be dynamically generated here -->
+      </div>
+
+      <!-- End Card Section -->
+    </div>
+
+    <script>
+      const clientHistory = {};
+      let lastRenderedIndex = null;
+
+      // Builds a smooth Cubic Bezier SVG path for the background chart
+      const buildSmoothChartSvg = (points, isPositive, cardId) => {
+        const width = 300;
+        const height = 140;
+        const padTop = 18;
+        const padBottom = 10;
+        const usableHeight = height - padTop - padBottom;
+
+        const series =
+          Array.isArray(points) && points.length > 1
+            ? points
+            : [points?.[0] || 100, points?.[0] || 100];
+
+        const minVal = Math.min(...series);
+        const maxVal = Math.max(...series);
+        const range = maxVal - minVal || 1;
+
+        const coords = series.map((val, idx) => {
+          const x = (idx / (series.length - 1)) * width;
+          const y =
+            maxVal === minVal
+              ? height * 0.65
+              : padTop + usableHeight - ((val - minVal) / range) * usableHeight;
+          return [x, y];
+        });
+
+        let linePath = `M ${coords[0][0].toFixed(1)},${coords[0][1].toFixed(1)}`;
+        for (let i = 0; i < coords.length - 1; i++) {
+          const p0 = coords[i === 0 ? 0 : i - 1];
+          const p1 = coords[i];
+          const p2 = coords[i + 1];
+          const p3 = coords[i + 2 < coords.length ? i + 2 : i + 1];
+
+          const tension = 0.2;
+          const cp1x = p1[0] + (p2[0] - p0[0]) * tension;
+          const cp1y = Math.max(
+            4,
+            Math.min(height - 4, p1[1] + (p2[1] - p0[1]) * tension)
+          );
+          const cp2x = p2[0] - (p3[0] - p1[0]) * tension;
+          const cp2y = Math.max(
+            4,
+            Math.min(height - 4, p2[1] - (p3[1] - p1[1]) * tension)
+          );
+
+          linePath += ` C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(
+            1
+          )},${cp2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+        }
+
+        const areaPath = `${linePath} L ${width},${height} L 0,${height} Z`;
+        const strokeColor = isPositive ? "#22c55e" : "#ef4444";
+        const gradId = `bg-grad-${cardId}`;
+
+        return `
+          <svg
+            class="absolute inset-0 w-full h-full pointer-events-none select-none"
+            viewBox="0 0 ${width} ${height}"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <defs>
+              <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="${strokeColor}" stop-opacity="0.22" />
+                <stop offset="75%" stop-color="${strokeColor}" stop-opacity="0.06" />
+                <stop offset="100%" stop-color="${strokeColor}" stop-opacity="0.0" />
+              </linearGradient>
+            </defs>
+            <path d="${areaPath}" fill="url(#${gradId})" />
+            <path
+              d="${linePath}"
+              fill="none"
+              stroke="${strokeColor}"
+              stroke-opacity="0.28"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        `;
+      };
+
+      const createCards = (data, idx) => {
+        const changeNum = Number(data.change);
+        const formattedChange = changeNum.toFixed(4);
+        const isPositive = changeNum >= 0;
+
+        if (!clientHistory[data.ticker]) {
+          clientHistory[data.ticker] = [];
+        }
+        clientHistory[data.ticker].push(Number(data.close));
+        if (clientHistory[data.ticker].length > 80) {
+          clientHistory[data.ticker].shift();
+        }
+
+        const historyPoints =
+          Array.isArray(data.history) && data.history.length > 0
+            ? data.history
+            : clientHistory[data.ticker];
+
+        const safeId = data.ticker.replace(/[^a-zA-Z0-9]/g, "") + "-" + idx;
+        const chartSvg = buildSmoothChartSvg(historyPoints, isPositive, safeId);
+
+        return `<!-- Card -->
+          <div
+            class="relative overflow-hidden flex flex-col gap-y-3 lg:gap-y-5 p-4 md:p-5 bg-neutral-900 border border-neutral-700 shadow-sm rounded-xl dark:bg-neutral-900 dark:border-neutral-700"
+          >
+            ${chartSvg}
+
+            <div class="relative z-10 inline-flex justify-center items-center">
+              <span class="text-2xl font-bold uppercase text-white dark:text-white">${data.ticker}</span>
+            </div>
+
+            <div class="relative z-10 text-center">
+              <h3 class="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white dark:text-neutral-200">
+                ${Number(data.close).toFixed(2)}
+              </h3>
+            </div>
+
+            <dl class="relative z-10 flex justify-center items-center divide-x divide-gray-200 dark:divide-neutral-800">
+              <dt class="pe-3 flex flex-col items-center">
+                <span class="${isPositive ? "text-green-500" : "text-red-500"}">
+                  ${
+                    isPositive
+                      ? `<svg class="inline-block size-5 self-center" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`
+                      : `<svg class="inline-block size-4 self-center" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>`
+                  }
+                  <span class="inline-block text-lg font-medium">
+                    ${formattedChange}%
+                  </span>
+                </span>
+              </dt>
+            </dl>
+          </div>
+          <!-- End Card -->`;
+      };
+
+      const renderCards = (data) => {
+        if (!data || !Array.isArray(data.stockData) || data.stockData.length === 0) return;
+        if (data.index === lastRenderedIndex) return;
+        lastRenderedIndex = data.index;
+
+        const cardSectionRow1 = document.getElementById("card-section-row1");
+        const cardSectionRow2 = document.getElementById("card-section-row2");
+        const cardSectionRow3 = document.getElementById("card-section-row3");
+        const indexElement = document.getElementById("index");
+
+        indexElement.textContent = data.index;
+
+        cardSectionRow1.innerHTML = data.stockData
+          .slice(0, 3)
+          .map((s, i) => createCards(s, i))
+          .join("");
+        cardSectionRow2.innerHTML = data.stockData
+          .slice(3, 7)
+          .map((s, i) => createCards(s, i + 3))
+          .join("");
+        cardSectionRow3.innerHTML = data.stockData
+          .slice(7, 10)
+          .map((s, i) => createCards(s, i + 7))
+          .join("");
+      };
+
+      // Primary live stream via Server-Sent Events
+      const eventSource = new EventSource("/stock-stream");
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          renderCards(data);
+        } catch (e) {}
+      };
+
+      // Fallback sync poll every 2 seconds so all 10 screens stay 100% synchronized
+      // even across serverless proxies or brief Wi-Fi drops
+      setInterval(async () => {
+        try {
+          const res = await fetch("/api/state");
+          if (res.ok) {
+            const data = await res.json();
+            renderCards(data);
+          }
+        } catch (e) {}
+      }, 2000);
+    </script>
+  </body>
+</html>

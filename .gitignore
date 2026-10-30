@@ -1,0 +1,17 @@
+# Env files - never share or commit live keys
+.env
+.env.local
+env
+.env.*
+!.env.example
+
+# Competition secrets - keep answer key private, but include competition-data.json for deployment
+mapping.json
+mapping.example.json
+digest.txt
+data.json
+competition-state.json
+
+# Deps / OS / build
+node_modules/
+.vercel/
