@@ -315,7 +315,7 @@ async function main() {
   if (!process.env.VERCEL) {
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`✅ Live Screen:  http://localhost:${PORT}`);
-      console.log(`🛠️  Admin Panel:  http://localhost:${PORT}/admin (Default PIN: ${ADMIN_PIN})`);
+      console.log(`🛠️  Admin Panel:  http://localhost:${PORT}/admin`);
     });
   }
 }

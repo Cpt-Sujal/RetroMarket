@@ -5,8 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Retro Market — Admin Control Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @keyframes shake {
+        0%,100% { transform: translateX(0); }
+        20%,60% { transform: translateX(-8px); }
+        40%,80% { transform: translateX(8px); }
+      }
+      .shake { animation: shake 0.4s ease; }
+
+      @keyframes fadeOut {
+        from { opacity: 1; pointer-events: all; }
+        to   { opacity: 0; pointer-events: none; }
+      }
+      .fade-out {
+        animation: fadeOut 0.5s ease forwards;
+      }
+    </style>
   </head>
   <body class="bg-neutral-950 text-white min-h-screen font-sans p-4 sm:p-8">
+
+    <!-- ===== PIN LOCK OVERLAY ===== -->
+    <div id="pin-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950">
+      <div class="w-full max-w-sm mx-4">
+        <!-- Logo / Title -->
+        <div class="text-center mb-8">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-neutral-800 border border-neutral-700 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h1 class="text-2xl font-bold tracking-tight">Admin Access</h1>
+          <p class="text-neutral-400 text-sm mt-1">Enter your Admin PIN to continue</p>
+        </div>
+
+        <!-- PIN card -->
+        <div id="pin-card" class="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4 shadow-2xl">
+          <label for="pin-overlay-input" class="block text-sm font-medium text-neutral-300">Admin PIN</label>
+          <input
+            id="pin-overlay-input"
+            type="password"
+            inputmode="numeric"
+            maxlength="10"
+            placeholder="Enter PIN…"
+            autocomplete="current-password"
+            class="w-full px-4 py-3 rounded-xl bg-neutral-950 border border-neutral-700 text-white text-lg tracking-widest text-center focus:outline-none focus:border-sky-500 transition"
+          />
+          <p id="pin-error" class="text-rose-400 text-sm text-center hidden">Incorrect PIN. Please try again.</p>
+          <button
+            id="pin-submit-btn"
+            onclick="submitPin()"
+            class="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-500 active:bg-sky-700 font-bold text-white transition"
+          >
+            Unlock Admin Panel
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- ===== END PIN LOCK OVERLAY ===== -->
+
+    <!-- Main dashboard (hidden until PIN verified) -->
+    <div id="admin-dashboard" class="hidden">
     <div class="max-w-5xl mx-auto space-y-6">
       <!-- Header -->
       <div class="flex flex-wrap items-center justify-between gap-4 bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
@@ -181,8 +239,66 @@
         </div>
       </div>
     </div>
+    </div><!-- /admin-dashboard -->
 
     <script>
+      // ---- PIN GATE LOGIC ----
+      let unlockedPin = null; // stored in memory after successful unlock
+
+      document.getElementById('pin-overlay-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') submitPin();
+      });
+
+      async function submitPin() {
+        const pin = document.getElementById('pin-overlay-input').value.trim();
+        if (!pin) return;
+
+        const btn = document.getElementById('pin-submit-btn');
+        btn.disabled = true;
+        btn.textContent = 'Verifying…';
+
+        try {
+          // Verify PIN against the server by sending a no-op 'state' check via
+          // a lightweight POST — we re-use the existing /api/admin endpoint with
+          // an intentionally unknown action; a 400 means PIN was accepted, a 401
+          // means wrong PIN.
+          // Better: just call /api/admin with action='pause' to a real verify;
+          // actually let's send a real pause call and check only the auth status.
+          const res = await fetch('/api/admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pin, action: '__ping__' }),
+          });
+          // 400 = bad action but PIN was valid; 401 = wrong PIN
+          if (res.status === 401) {
+            throw new Error('wrong pin');
+          }
+          // PIN accepted
+          unlockedPin = pin;
+          // Copy pin into the hidden admin-pin field so sendAction() keeps working
+          document.getElementById('admin-pin').value = pin;
+
+          // Dismiss overlay with fade
+          const overlay = document.getElementById('pin-overlay');
+          overlay.classList.add('fade-out');
+          overlay.addEventListener('animationend', () => overlay.remove(), { once: true });
+
+          // Show dashboard
+          document.getElementById('admin-dashboard').classList.remove('hidden');
+          refreshState();
+        } catch (err) {
+          const card = document.getElementById('pin-card');
+          const errEl = document.getElementById('pin-error');
+          errEl.classList.remove('hidden');
+          card.classList.add('shake');
+          card.addEventListener('animationend', () => card.classList.remove('shake'), { once: true });
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Unlock Admin Panel';
+        }
+      }
+      // ---- END PIN GATE LOGIC ----
+
       function showFeedback(msg, isError = false) {
         const el = document.getElementById("action-feedback");
         el.textContent = msg;
