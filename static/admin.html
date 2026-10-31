@@ -1,410 +1,400 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Retro Market — Admin Control Panel</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        20%, 60% { transform: translateX(-8px); }
-        40%, 80% { transform: translateX(8px); }
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Retro Market — Admin Control Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0);
       }
-      .animate-shake {
-        animation: shake 0.4s ease-in-out;
+
+      20%,
+      60% {
+        transform: translateX(-8px);
       }
-    </style>
-  </head>
-  <body class="bg-neutral-950 text-white min-h-screen font-sans p-4 sm:p-8">
-    <!-- 4-Digit Security PIN Gate Modal -->
-    <div
-      id="pin-gate-modal"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950 p-4 transition-opacity duration-300"
-    >
+
+      40%,
+      80% {
+        transform: translateX(8px);
+      }
+    }
+
+    .animate-shake {
+      animation: shake 0.4s ease-in-out;
+    }
+  </style>
+</head>
+
+<body class="bg-neutral-950 text-white min-h-screen font-sans p-4 sm:p-8">
+  <!-- 4-Digit Security PIN Gate Modal -->
+  <div id="pin-gate-modal"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950 p-4 transition-opacity duration-300">
+    <div id="pin-card"
+      class="w-full max-w-sm rounded-2xl border border-neutral-800 bg-neutral-900/95 p-8 shadow-2xl text-center space-y-6">
       <div
-        id="pin-card"
-        class="w-full max-w-sm rounded-2xl border border-neutral-800 bg-neutral-900/95 p-8 shadow-2xl text-center space-y-6"
-      >
-        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
-          <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
-        </div>
+        class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+        <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
 
+      <div>
+        <h2 class="text-2xl font-bold tracking-tight text-white">Admin Access</h2>
+        <p class="mt-1.5 text-xs text-neutral-400">
+          Enter the 4-digit PIN configured in your <code
+            class="text-neutral-300 bg-neutral-800 px-1 py-0.5 rounded">.env</code> to enter the control panel.
+        </p>
+      </div>
+
+      <form id="pin-form" onsubmit="handlePinSubmit(event)" class="space-y-4">
         <div>
-          <h2 class="text-2xl font-bold tracking-tight text-white">Admin Access</h2>
-          <p class="mt-1.5 text-xs text-neutral-400">
-            Enter the 4-digit PIN configured in your <code class="text-neutral-300 bg-neutral-800 px-1 py-0.5 rounded">.env</code> to enter the control panel.
-          </p>
+          <input id="gate-pin-input" type="password" maxlength="4" inputmode="numeric" pattern="[0-9]*"
+            placeholder="••••" autofocus
+            class="w-full text-center text-3xl font-mono tracking-[0.5em] py-3.5 px-4 rounded-xl bg-neutral-950 border border-neutral-700 text-white placeholder-neutral-700 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition" />
         </div>
 
-        <form id="pin-form" onsubmit="handlePinSubmit(event)" class="space-y-4">
-          <div>
-            <input
-              id="gate-pin-input"
-              type="password"
-              maxlength="4"
-              inputmode="numeric"
-              pattern="[0-9]*"
-              placeholder="••••"
-              autofocus
-              class="w-full text-center text-3xl font-mono tracking-[0.5em] py-3.5 px-4 rounded-xl bg-neutral-950 border border-neutral-700 text-white placeholder-neutral-700 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition"
-            />
-          </div>
+        <p id="gate-error" class="text-xs text-rose-400 font-semibold min-h-[16px] hidden"></p>
 
-          <p id="gate-error" class="text-xs text-rose-400 font-semibold min-h-[16px] hidden"></p>
+        <button type="submit" id="gate-submit-btn"
+          class="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-neutral-950 font-bold transition shadow-lg flex items-center justify-center gap-2 cursor-pointer">
+          Unlock Admin Panel
+        </button>
+      </form>
+    </div>
+  </div>
 
-          <button
-            type="submit"
-            id="gate-submit-btn"
-            class="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-neutral-950 font-bold transition shadow-lg flex items-center justify-center gap-2 cursor-pointer"
-          >
-            Unlock Admin Panel
-          </button>
-        </form>
+  <!-- Main Admin Dashboard (Hidden until PIN is valid) -->
+  <div id="admin-dashboard" class="max-w-5xl mx-auto space-y-6 hidden">
+    <!-- Header -->
+    <div
+      class="flex flex-wrap items-center justify-between gap-4 bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
+          Retro Market — Organizer Admin Panel
+        </h1>
+        <p class="text-neutral-400 text-sm mt-1">
+          Control all connected display screens in real time (Start, Pause, Reset, Jump to Round)
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="lockPanel()"
+          class="px-3.5 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium border border-neutral-700 text-neutral-300 hover:text-white transition flex items-center gap-1.5 cursor-pointer">
+          🔒 Lock
+        </button>
+        <a href="/" target="_blank"
+          class="px-4 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-sm font-medium border border-neutral-700 transition">
+          Open Live Screen ↗
+        </a>
       </div>
     </div>
 
-    <!-- Main Admin Dashboard (Hidden until PIN is valid) -->
-    <div id="admin-dashboard" class="max-w-5xl mx-auto space-y-6 hidden">
-      <!-- Header -->
-      <div class="flex flex-wrap items-center justify-between gap-4 bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-        <div>
-          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
-            Retro Market — Organizer Admin Panel
-          </h1>
-          <p class="text-neutral-400 text-sm mt-1">
-            Control all connected display screens in real time (Start, Pause, Reset, Jump to Round)
-          </p>
-        </div>
-        <div class="flex items-center gap-3">
-          <button
-            onclick="lockPanel()"
-            class="px-3.5 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium border border-neutral-700 text-neutral-300 hover:text-white transition flex items-center gap-1.5 cursor-pointer"
-          >
-            🔒 Lock
-          </button>
-          <a
-            href="/"
-            target="_blank"
-            class="px-4 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-sm font-medium border border-neutral-700 transition"
-          >
-            Open Live Screen ↗
-          </a>
+    <!-- PIN & Status Bar -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+        <p class="text-xs uppercase tracking-wider text-neutral-400">Competition Status</p>
+        <div class="mt-2 flex items-center gap-2">
+          <span id="status-dot" class="w-3 h-3 rounded-full bg-yellow-500"></span>
+          <span id="status-text" class="text-xl font-bold">PAUSED (READY)</span>
         </div>
       </div>
 
-      <!-- PIN & Status Bar -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
-          <p class="text-xs uppercase tracking-wider text-neutral-400">Competition Status</p>
-          <div class="mt-2 flex items-center gap-2">
-            <span id="status-dot" class="w-3 h-3 rounded-full bg-yellow-500"></span>
-            <span id="status-text" class="text-xl font-bold">PAUSED (READY)</span>
-          </div>
-        </div>
-
-        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
-          <p class="text-xs uppercase tracking-wider text-neutral-400">Current Round / Total</p>
-          <p class="mt-2 text-2xl font-bold">
-            <span id="current-round">0</span>
-            <span class="text-neutral-500 text-lg">/ <span id="max-round">420</span></span>
-          </p>
-          <p class="text-xs text-neutral-400 mt-1" id="elapsed-time-label">0m 0s / 140m</p>
-        </div>
-
-        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
-          <p class="text-xs uppercase tracking-wider text-neutral-400">Next Price Update In</p>
-          <p class="mt-2 text-2xl font-bold text-emerald-400" id="next-tick-countdown">--</p>
-          <p class="text-xs text-neutral-400 mt-1">Interval: <span id="interval-label">20</span>s per round</p>
-        </div>
-
-        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
-          <p class="text-xs uppercase tracking-wider text-neutral-400">Connected Screens (SSE)</p>
-          <p class="mt-2 text-2xl font-bold text-sky-400" id="connected-screens">0</p>
-          <p class="text-xs text-neutral-400 mt-1">Plus auto-synced polling screens</p>
-        </div>
+      <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+        <p class="text-xs uppercase tracking-wider text-neutral-400">Current Round / Total</p>
+        <p class="mt-2 text-2xl font-bold">
+          <span id="current-round">0</span>
+          <span class="text-neutral-500 text-lg">/ <span id="max-round">420</span></span>
+        </p>
+        <p class="text-xs text-neutral-400 mt-1" id="elapsed-time-label">0m 0s / 140m</p>
       </div>
 
-      <!-- Main Action Controls -->
-      <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-6">
-        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-800 pb-4">
-          <h2 class="text-lg font-semibold">Live Event Controls</h2>
-          <div class="flex items-center gap-2">
-            <label for="admin-pin" class="text-sm text-neutral-400">Active PIN:</label>
-            <input
-              id="admin-pin"
-              type="password"
-              maxlength="4"
-              class="w-24 px-3 py-1.5 rounded-lg bg-neutral-950 border border-neutral-700 text-sm text-white focus:outline-none focus:border-sky-500"
-            />
-          </div>
-        </div>
-
-        <!-- Primary Buttons -->
-        <div class="flex flex-wrap gap-4">
-          <button
-            onclick="sendAction('start')"
-            class="flex-1 min-w-[180px] py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 font-bold text-white shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
-          >
-            ▶ START / RESUME
-          </button>
-
-          <button
-            onclick="sendAction('pause')"
-            class="flex-1 min-w-[180px] py-3.5 px-6 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-700 font-bold text-white shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
-          >
-            ⏸ PAUSE SCREENS
-          </button>
-
-          <button
-            onclick="if(confirm('Reset competition back to Round 0 (0m) and pause?')) sendAction('reset')"
-            class="flex-1 min-w-[180px] py-3.5 px-6 rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 font-bold text-white shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
-          >
-            ⏮ RESET TO ROUND 0
-          </button>
-        </div>
-
-        <!-- Quick Checkpoint Jump Buttons -->
-        <div class="pt-2">
-          <p class="text-sm text-neutral-400 mb-2">
-            Quick Jump to Time / Round Checkpoint:
-          </p>
-          <div class="flex flex-wrap gap-2">
-            <button onclick="jumpToRound(0)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">0m (R0)</button>
-            <button onclick="jumpToRound(60)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">20m (R60)</button>
-            <button onclick="jumpToRound(90)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">30m (R90 - JIO/ZOMATO Peak)</button>
-            <button onclick="jumpToRound(120)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">40m (R120)</button>
-            <button onclick="jumpToRound(180)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">60m (R180)</button>
-            <button onclick="jumpToRound(240)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">80m (R240)</button>
-            <button onclick="jumpToRound(300)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">100m (R300)</button>
-            <button onclick="jumpToRound(360)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">120m (R360)</button>
-            <button onclick="jumpToRound(420)" class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">140m (R420 - End)</button>
-          </div>
-        </div>
-
-        <!-- Custom Jump & Speed Settings -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-neutral-800">
-          <div class="flex items-center gap-2">
-            <label class="text-sm text-neutral-400">Custom Round (0-420):</label>
-            <input
-              id="custom-round-input"
-              type="number"
-              min="0"
-              max="420"
-              value="0"
-              class="w-24 px-3 py-1.5 rounded-lg bg-neutral-950 border border-neutral-700 text-sm"
-            />
-            <button
-              onclick="jumpToRound(Number(document.getElementById('custom-round-input').value))"
-              class="px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-sm font-semibold cursor-pointer"
-            >
-              Jump
-            </button>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <label class="text-sm text-neutral-400">Speed (sec/round):</label>
-            <input
-              id="speed-sec-input"
-              type="number"
-              min="1"
-              max="300"
-              value="20"
-              class="w-24 px-3 py-1.5 rounded-lg bg-neutral-950 border border-neutral-700 text-sm"
-            />
-            <button
-              onclick="setSpeed(Number(document.getElementById('speed-sec-input').value))"
-              class="px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-sm font-semibold cursor-pointer"
-            >
-              Update Speed
-            </button>
-          </div>
-        </div>
-
-        <p id="action-feedback" class="text-sm text-emerald-400 hidden"></p>
+      <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+        <p class="text-xs uppercase tracking-wider text-neutral-400">Next Price Update In</p>
+        <p class="mt-2 text-2xl font-bold text-emerald-400" id="next-tick-countdown">--</p>
+        <p class="text-xs text-neutral-400 mt-1">Interval: <span id="interval-label">20</span>s per round</p>
       </div>
 
-      <!-- Live Stock Preview Table -->
-      <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
-        <h2 class="text-lg font-semibold mb-4">Live Board Preview (What All 10 Screens Are Showing Right Now)</h2>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="border-b border-neutral-800 text-neutral-400 text-xs uppercase">
-                <th class="py-2 px-3">#</th>
-                <th class="py-2 px-3">Stock</th>
-                <th class="py-2 px-3 text-right">Start Price (R0)</th>
-                <th class="py-2 px-3 text-right">Current Price</th>
-                <th class="py-2 px-3 text-right">Last Tick Change</th>
-                <th class="py-2 px-3 text-right">Total Return Since Start</th>
-              </tr>
-            </thead>
-            <tbody id="preview-table-body" class="divide-y divide-neutral-800 text-sm"></tbody>
-          </table>
-        </div>
+      <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+        <p class="text-xs uppercase tracking-wider text-neutral-400">Connected Screens (SSE)</p>
+        <p class="mt-2 text-2xl font-bold text-sky-400" id="connected-screens">0</p>
+        <p class="text-xs text-neutral-400 mt-1">Plus auto-synced polling screens</p>
       </div>
     </div>
 
-    <script>
-      let authenticatedPin = "";
+    <!-- Main Action Controls -->
+    <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-800 pb-4">
+        <h2 class="text-lg font-semibold">Live Event Controls</h2>
+        <div class="flex items-center gap-2">
+          <label for="admin-pin" class="text-sm text-neutral-400">Active PIN:</label>
+          <input id="admin-pin" type="password" maxlength="4"
+            class="w-24 px-3 py-1.5 rounded-lg bg-neutral-950 border border-neutral-700 text-sm text-white focus:outline-none focus:border-sky-500" />
+        </div>
+      </div>
 
-      async function verifyPin(pinToTest) {
-        if (!pinToTest || pinToTest.length !== 4) {
-          return { ok: false, error: "Please enter a 4-digit PIN" };
+      <!-- Primary Buttons -->
+      <div class="flex flex-wrap gap-4">
+        <button onclick="sendAction('start')"
+          class="flex-1 min-w-[180px] py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 font-bold text-white shadow-lg transition flex items-center justify-center gap-2 cursor-pointer">
+          ▶ START / RESUME
+        </button>
+
+        <button onclick="sendAction('pause')"
+          class="flex-1 min-w-[180px] py-3.5 px-6 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-700 font-bold text-white shadow-lg transition flex items-center justify-center gap-2 cursor-pointer">
+          ⏸ PAUSE SCREENS
+        </button>
+
+        <button onclick="if(confirm('Reset competition back to Round 0 (0m) and pause?')) sendAction('reset')"
+          class="flex-1 min-w-[180px] py-3.5 px-6 rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 font-bold text-white shadow-lg transition flex items-center justify-center gap-2 cursor-pointer">
+          ⏮ RESET TO ROUND 0
+        </button>
+      </div>
+      <div class="pt-2">
+        <p class="text-sm text-neutral-400 mb-2">
+          Quick Jump to Time / Round Checkpoint:
+        </p>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="jumpToRound(0)"
+            class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">0m
+            (R0)</button>
+          <button onclick="jumpToRound(60)"
+            class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">20m
+            (R60)</button>
+          <button onclick="jumpToRound(90)"
+            class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">30m
+            (R90 - JIO/ZOMATO Peak)</button>
+          <button onclick="jumpToRound(120)"
+            class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">40m
+            (R120)</button>
+          <button onclick="jumpToRound(180)"
+            class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">60m
+            (R180)</button>
+          <button onclick="jumpToRound(240)"
+            class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">80m
+            (R240)</button>
+          <button onclick="jumpToRound(300)"
+            class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">100m
+            (R300)</button>
+          <button onclick="jumpToRound(360)"
+            class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">120m
+            (R360)</button>
+          <button onclick="jumpToRound(420)"
+            class="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium cursor-pointer">140m
+            (R420 - End)</button>
+        </div>
+      </div>
+
+      <!-- Custom Jump & Speed Settings -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-neutral-800">
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-neutral-400">Custom Round (0-420):</label>
+          <input id="custom-round-input" type="number" min="0" max="420" value="0"
+            class="w-24 px-3 py-1.5 rounded-lg bg-neutral-950 border border-neutral-700 text-sm" />
+          <button onclick="jumpToRound(Number(document.getElementById('custom-round-input').value))"
+            class="px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-sm font-semibold cursor-pointer">
+            Jump
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-neutral-400">Speed (sec/round):</label>
+          <input id="speed-sec-input" type="number" min="1" max="300" value="20"
+            class="w-24 px-3 py-1.5 rounded-lg bg-neutral-950 border border-neutral-700 text-sm" />
+          <button onclick="setSpeed(Number(document.getElementById('speed-sec-input').value))"
+            class="px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-sm font-semibold cursor-pointer">
+            Update Speed
+          </button>
+        </div>
+      </div>
+
+      <p id="action-feedback" class="text-sm text-emerald-400 hidden"></p>
+    </div>
+
+    <!-- Live Stock Preview Table -->
+    <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
+      <h2 class="text-lg font-semibold mb-4">Live Board Preview (What All 10 Screens Are Showing Right Now)</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-neutral-800 text-neutral-400 text-xs uppercase">
+              <th class="py-2 px-3">#</th>
+              <th class="py-2 px-3">Stock</th>
+              <th class="py-2 px-3 text-right">Start Price (R0)</th>
+              <th class="py-2 px-3 text-right">Current Price</th>
+              <th class="py-2 px-3 text-right">Last Tick Change</th>
+              <th class="py-2 px-3 text-right">Total Return Since Start</th>
+            </tr>
+          </thead>
+          <tbody id="preview-table-body" class="divide-y divide-neutral-800 text-sm"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let authenticatedPin = "";
+
+    async function verifyPin(pinToTest) {
+      if (!pinToTest || pinToTest.length !== 4) {
+        return { ok: false, error: "Please enter a 4-digit PIN" };
+      }
+      try {
+        const res = await fetch("/api/admin/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pin: pinToTest }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          return { ok: true };
         }
-        try {
-          const res = await fetch("/api/admin/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ pin: pinToTest }),
-          });
-          const data = await res.json();
-          if (res.ok && data.success) {
-            return { ok: true };
+        return { ok: false, error: data.error || "Invalid PIN. Access denied." };
+      } catch (err) {
+        return { ok: false, error: "Connection error: " + err.message };
+      }
+    }
+
+    async function handlePinSubmit(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById("gate-pin-input");
+      const errEl = document.getElementById("gate-error");
+      const btn = document.getElementById("gate-submit-btn");
+      const pin = input.value.trim();
+
+      errEl.classList.add("hidden");
+      btn.disabled = true;
+      btn.textContent = "Verifying...";
+
+      const result = await verifyPin(pin);
+      btn.disabled = false;
+      btn.textContent = "Unlock Admin Panel";
+
+      if (result.ok) {
+        authenticatedPin = pin;
+        sessionStorage.setItem("retro_admin_pin", pin);
+        document.getElementById("admin-pin").value = pin;
+        unlockUI();
+      } else {
+        errEl.textContent = result.error;
+        errEl.classList.remove("hidden");
+        const card = document.getElementById("pin-card");
+        card.classList.add("animate-shake");
+        setTimeout(() => card.classList.remove("animate-shake"), 400);
+        input.value = "";
+        input.focus();
+      }
+    }
+
+    function unlockUI() {
+      document.getElementById("pin-gate-modal").classList.add("hidden");
+      document.getElementById("admin-dashboard").classList.remove("hidden");
+      refreshState();
+    }
+
+    function lockPanel() {
+      sessionStorage.removeItem("retro_admin_pin");
+      authenticatedPin = "";
+      document.getElementById("admin-dashboard").classList.add("hidden");
+      document.getElementById("gate-pin-input").value = "";
+      document.getElementById("gate-error").classList.add("hidden");
+      document.getElementById("pin-gate-modal").classList.remove("hidden");
+      document.getElementById("gate-pin-input").focus();
+    }
+
+    function showFeedback(msg, isError = false) {
+      const el = document.getElementById("action-feedback");
+      el.textContent = msg;
+      el.className = `text-sm ${isError ? "text-rose-400" : "text-emerald-400"}`;
+      el.classList.remove("hidden");
+      setTimeout(() => el.classList.add("hidden"), 4000);
+    }
+
+    async function sendAction(action, extra = {}) {
+      const pin = authenticatedPin || document.getElementById("admin-pin").value;
+      try {
+        const res = await fetch("/api/admin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pin, action, ...extra }),
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          showFeedback(json.error || "Action failed", true);
+          if (res.status === 401) {
+            lockPanel();
           }
-          return { ok: false, error: data.error || "Invalid PIN. Access denied." };
-        } catch (err) {
-          return { ok: false, error: "Connection error: " + err.message };
+          return;
         }
-      }
-
-      async function handlePinSubmit(e) {
-        if (e) e.preventDefault();
-        const input = document.getElementById("gate-pin-input");
-        const errEl = document.getElementById("gate-error");
-        const btn = document.getElementById("gate-submit-btn");
-        const pin = input.value.trim();
-
-        errEl.classList.add("hidden");
-        btn.disabled = true;
-        btn.textContent = "Verifying...";
-
-        const result = await verifyPin(pin);
-        btn.disabled = false;
-        btn.textContent = "Unlock Admin Panel";
-
-        if (result.ok) {
-          authenticatedPin = pin;
-          sessionStorage.setItem("retro_admin_pin", pin);
-          document.getElementById("admin-pin").value = pin;
-          unlockUI();
-        } else {
-          errEl.textContent = result.error;
-          errEl.classList.remove("hidden");
-          const card = document.getElementById("pin-card");
-          card.classList.add("animate-shake");
-          setTimeout(() => card.classList.remove("animate-shake"), 400);
-          input.value = "";
-          input.focus();
-        }
-      }
-
-      function unlockUI() {
-        document.getElementById("pin-gate-modal").classList.add("hidden");
-        document.getElementById("admin-dashboard").classList.remove("hidden");
+        showFeedback(`Action '${action}' applied! Round: ${json.index}`);
         refreshState();
+      } catch (err) {
+        showFeedback("Network error: " + err.message, true);
       }
+    }
 
-      function lockPanel() {
-        sessionStorage.removeItem("retro_admin_pin");
-        authenticatedPin = "";
-        document.getElementById("admin-dashboard").classList.add("hidden");
-        document.getElementById("gate-pin-input").value = "";
-        document.getElementById("gate-error").classList.add("hidden");
-        document.getElementById("pin-gate-modal").classList.remove("hidden");
-        document.getElementById("gate-pin-input").focus();
-      }
+    function jumpToRound(round) {
+      sendAction("jump", { round });
+    }
 
-      function showFeedback(msg, isError = false) {
-        const el = document.getElementById("action-feedback");
-        el.textContent = msg;
-        el.className = `text-sm ${isError ? "text-rose-400" : "text-emerald-400"}`;
-        el.classList.remove("hidden");
-        setTimeout(() => el.classList.add("hidden"), 4000);
-      }
+    function setSpeed(seconds) {
+      if (!seconds || seconds < 1) return;
+      sendAction("speed", { roundDurationMs: seconds * 1000 });
+    }
 
-      async function sendAction(action, extra = {}) {
-        const pin = authenticatedPin || document.getElementById("admin-pin").value;
-        try {
-          const res = await fetch("/api/admin", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ pin, action, ...extra }),
-          });
-          const json = await res.json();
-          if (!res.ok) {
-            showFeedback(json.error || "Action failed", true);
-            if (res.status === 401) {
-              lockPanel();
-            }
-            return;
-          }
-          showFeedback(`Action '${action}' applied! Round: ${json.index}`);
-          refreshState();
-        } catch (err) {
-          showFeedback("Network error: " + err.message, true);
+    async function refreshState() {
+      if (!authenticatedPin) return;
+      try {
+        const res = await fetch("/api/state");
+        const state = await res.json();
+
+        const dot = document.getElementById("status-dot");
+        const statusText = document.getElementById("status-text");
+        if (state.isRunning) {
+          dot.className = "w-3 h-3 rounded-full bg-emerald-500 animate-pulse";
+          statusText.textContent = "LIVE / RUNNING";
+          statusText.className = "text-xl font-bold text-emerald-400";
+        } else if (state.index >= state.maxRound) {
+          dot.className = "w-3 h-3 rounded-full bg-sky-500";
+          statusText.textContent = "FINISHED (FINAL ROUND)";
+          statusText.className = "text-xl font-bold text-sky-400";
+        } else {
+          dot.className = "w-3 h-3 rounded-full bg-yellow-500";
+          statusText.textContent = "PAUSED / WAITING";
+          statusText.className = "text-xl font-bold text-yellow-400";
         }
-      }
 
-      function jumpToRound(round) {
-        sendAction("jump", { round });
-      }
+        document.getElementById("current-round").textContent = state.index;
+        document.getElementById("max-round").textContent = state.maxRound;
+        const mins = Math.floor((state.index * (state.roundDurationMs / 1000)) / 60);
+        const secs = Math.floor((state.index * (state.roundDurationMs / 1000)) % 60);
+        const totalMins = Math.floor((state.maxRound * (state.roundDurationMs / 1000)) / 60);
+        document.getElementById("elapsed-time-label").textContent = `${mins}m ${secs}s / ${totalMins}m`;
 
-      function setSpeed(seconds) {
-        if (!seconds || seconds < 1) return;
-        sendAction("speed", { roundDurationMs: seconds * 1000 });
-      }
+        document.getElementById("interval-label").textContent = (
+          state.roundDurationMs / 1000
+        ).toFixed(0);
+        document.getElementById("next-tick-countdown").textContent = state.isRunning
+          ? `${Math.ceil(state.msUntilNextRound / 1000)}s`
+          : "Paused";
+        document.getElementById("connected-screens").textContent =
+          state.connectedClients ?? 0;
 
-      async function refreshState() {
-        if (!authenticatedPin) return;
-        try {
-          const res = await fetch("/api/state");
-          const state = await res.json();
-
-          const dot = document.getElementById("status-dot");
-          const statusText = document.getElementById("status-text");
-          if (state.isRunning) {
-            dot.className = "w-3 h-3 rounded-full bg-emerald-500 animate-pulse";
-            statusText.textContent = "LIVE / RUNNING";
-            statusText.className = "text-xl font-bold text-emerald-400";
-          } else if (state.index >= state.maxRound) {
-            dot.className = "w-3 h-3 rounded-full bg-sky-500";
-            statusText.textContent = "FINISHED (FINAL ROUND)";
-            statusText.className = "text-xl font-bold text-sky-400";
-          } else {
-            dot.className = "w-3 h-3 rounded-full bg-yellow-500";
-            statusText.textContent = "PAUSED / WAITING";
-            statusText.className = "text-xl font-bold text-yellow-400";
-          }
-
-          document.getElementById("current-round").textContent = state.index;
-          document.getElementById("max-round").textContent = state.maxRound;
-          const mins = Math.floor((state.index * (state.roundDurationMs / 1000)) / 60);
-          const secs = Math.floor((state.index * (state.roundDurationMs / 1000)) % 60);
-          const totalMins = Math.floor((state.maxRound * (state.roundDurationMs / 1000)) / 60);
-          document.getElementById("elapsed-time-label").textContent = `${mins}m ${secs}s / ${totalMins}m`;
-
-          document.getElementById("interval-label").textContent = (
-            state.roundDurationMs / 1000
-          ).toFixed(0);
-          document.getElementById("next-tick-countdown").textContent = state.isRunning
-            ? `${Math.ceil(state.msUntilNextRound / 1000)}s`
-            : "Paused";
-          document.getElementById("connected-screens").textContent =
-            state.connectedClients ?? 0;
-
-          if (Array.isArray(state.stockData)) {
-            const tbody = document.getElementById("preview-table-body");
-            tbody.innerHTML = state.stockData
-              .map((s, idx) => {
-                const startP = s.startPrice || s.history?.[0] || s.close;
-                const totalRet = (((s.close - startP) / startP) * 100).toFixed(2);
-                const tickChg = Number(s.change).toFixed(2);
-                const isTickPos = Number(s.change) >= 0;
-                const isTotPos = Number(totalRet) >= 0;
-                return `
+        if (Array.isArray(state.stockData)) {
+          const tbody = document.getElementById("preview-table-body");
+          tbody.innerHTML = state.stockData
+            .map((s, idx) => {
+              const startP = s.startPrice || s.history?.[0] || s.close;
+              const totalRet = (((s.close - startP) / startP) * 100).toFixed(2);
+              const tickChg = Number(s.change).toFixed(2);
+              const isTickPos = Number(s.change) >= 0;
+              const isTotPos = Number(totalRet) >= 0;
+              return `
                   <tr class="hover:bg-neutral-800/40">
                     <td class="py-2.5 px-3 text-neutral-400">${idx + 1}</td>
                     <td class="py-2.5 px-3 font-bold text-white">${s.ticker}</td>
@@ -418,33 +408,34 @@
                     </td>
                   </tr>
                 `;
-              })
-              .join("");
-          }
-        } catch (e) {
-          console.error(e);
+            })
+            .join("");
         }
+      } catch (e) {
+        console.error(e);
       }
+    }
 
-      // Check existing session PIN on page load
-      window.addEventListener("DOMContentLoaded", async () => {
-        const savedPin = sessionStorage.getItem("retro_admin_pin");
-        if (savedPin) {
-          const result = await verifyPin(savedPin);
-          if (result.ok) {
-            authenticatedPin = savedPin;
-            document.getElementById("admin-pin").value = savedPin;
-            unlockUI();
-            return;
-          }
-          sessionStorage.removeItem("retro_admin_pin");
+    // Check existing session PIN on page load
+    window.addEventListener("DOMContentLoaded", async () => {
+      const savedPin = sessionStorage.getItem("retro_admin_pin");
+      if (savedPin) {
+        const result = await verifyPin(savedPin);
+        if (result.ok) {
+          authenticatedPin = savedPin;
+          document.getElementById("admin-pin").value = savedPin;
+          unlockUI();
+          return;
         }
-        document.getElementById("gate-pin-input")?.focus();
-      });
+        sessionStorage.removeItem("retro_admin_pin");
+      }
+      document.getElementById("gate-pin-input")?.focus();
+    });
 
-      setInterval(() => {
-        if (authenticatedPin) refreshState();
-      }, 1000);
-    </script>
-  </body>
+    setInterval(() => {
+      if (authenticatedPin) refreshState();
+    }, 1000);
+  </script>
+</body>
+
 </html>
