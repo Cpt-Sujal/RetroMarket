@@ -135,7 +135,20 @@ function setupApp(__dirname, MAX_CONNECTIONS) {
   });
 
   app.get("/admin", (req, res) => {
+    res.status(404).send("Cannot GET /admin");
+  });
+
+  app.get("/fuck", (req, res) => {
     res.sendFile(path.join(__dirname, "static/admin.html"));
+  });
+
+  app.post("/api/admin/verify", (req, res) => {
+    const { pin } = req.body || {};
+    const configuredPin = process.env.ADMIN_PIN || ADMIN_PIN;
+    if (String(pin) === String(configuredPin)) {
+      return res.json({ success: true });
+    }
+    return res.status(401).json({ success: false, error: "Invalid 4-digit Admin PIN" });
   });
 
   app.get("/api/state", (req, res) => {
@@ -145,7 +158,8 @@ function setupApp(__dirname, MAX_CONNECTIONS) {
 
   app.post("/api/admin", (req, res) => {
     const { pin, action, round, roundDurationMs } = req.body || {};
-    if (String(pin) !== String(ADMIN_PIN)) {
+    const configuredPin = process.env.ADMIN_PIN || ADMIN_PIN;
+    if (String(pin) !== String(configuredPin)) {
       return res.status(401).json({ error: "Invalid Admin PIN" });
     }
 
@@ -315,7 +329,7 @@ async function main() {
   if (!process.env.VERCEL) {
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`✅ Live Screen:  http://localhost:${PORT}`);
-      console.log(`🛠️  Admin Panel:  http://localhost:${PORT}/admin (Default PIN: ${ADMIN_PIN})`);
+      console.log(`🛠️  Admin Panel:  http://localhost:${PORT}/fuck (PIN configured in .env)`);
     });
   }
 }

@@ -38,7 +38,7 @@ const random = seededRandom(seed);
 // Exact 10 display stocks requested by organizer (in order 1 to 10):
 // 1= KOTAKBANK   (Price multiplied by 5x across all rounds: 3100 -> 4680.40)
 // 2= ZOMATO      (Up first 30m, then down-down only)
-// 3= RUNIVERSE   (Swapped -> gets RVNL +136.88% breakout)
+// 3= RUNIVERSE   (Stable with ups & downs: highest ~70%, ending near 49% return under 50%)
 // 4= JIO         (Up first 30m, then down-down only)
 // 5= OLA         (Up -> Down -> Up -> Down & Down, ending -49.90% loss!)
 // 6= SUZLON      (125 -> ~200 -> ~320 -> ~220 -> ~250 -> ~60 -> ~110)
@@ -151,11 +151,20 @@ const stockConfigs = [
   {
     slot: 10,
     displayTicker: "RUNIVERSE", // Swapped into slot 3 after RNG pass
-    sourceIndex: 2, // RVNL: Strong breakout (+136.88% net, second best behind L&T)
+    sourceIndex: 2, // RVNL base volatility, shaped: stable ups & downs, highest ~70%, ending near 50% (<50%)
     startPrice: 820.0,
     priceMultiplier: 1,
-    mode: "normal",
-    returnScale: 0.52,
+    mode: "multi_wave",
+    waypoints: [
+      { round: 0, mult: 1.0 },      // 0m:   820.00 (0.00%)
+      { round: 70, mult: 1.22 },    // ~23m: ~1000  (First UP wave, +22%)
+      { round: 140, mult: 1.13 },   // ~46m: ~925   (Pullback, +13%)
+      { round: 210, mult: 1.42 },   // ~70m: ~1165  (Second UP wave, +42%)
+      { round: 260, mult: 1.35 },   // ~86m: ~1105  (Pullback, +35%)
+      { round: 330, mult: 1.642 },  // ~110m:~1350  (Highest peak wave, strictly <= 70%)
+      { round: 380, mult: 1.40 },   // ~126m:~1150  (Cool-down dip, +40%)
+      { round: 420, mult: 1.478 },  // 140m: ~1220  (Final close: ~48.9% return, strictly under 50%)
+    ],
   },
 ];
 
