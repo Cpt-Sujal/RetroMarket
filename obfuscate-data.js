@@ -36,39 +36,42 @@ function seededRandom(seedStr) {
 const random = seededRandom(seed);
 
 // Exact 10 display stocks requested by organizer (in order 1 to 10):
-// 1= KOTAKBANK
-// 2= WIPRO      (Up first 30m, then down-down only)
-// 3= RUNIVERSE  (Swapped with NSE -> gets RVNL +136.88% breakout)
-// 4= JIO        (Up first 30m, then down-down only)
-// 5= AURAMETER  (WORST overall return)
-// 6= ADANIPOWER
-// 7= TMPV
-// 8= TCS
-// 9= L&T        (BEST overall return)
-// 10= NSE       (Swapped with RUNIVERSE -> gets ZEEL +10.94% trajectory)
+// 1= KOTAKBANK   (Price multiplied by 5x across all rounds: 3100 -> 4680.40)
+// 2= ZOMATO      (Up first 30m, then down-down only)
+// 3= RUNIVERSE   (Swapped -> gets RVNL +136.88% breakout)
+// 4= JIO         (Up first 30m, then down-down only)
+// 5= OLA         (Up -> Down -> Up -> Down & Down, ending -49.90% loss!)
+// 6= SUZLON      (125 -> ~200 -> ~320 -> ~220 -> ~250 -> ~60 -> ~110)
+// 7= NAYKAA      (Swapped with TCS -> gets TATASTEEL +103.25% cyclical rally)
+// 8= TCS         (Swapped with NAYKAA -> gets BHEL 15x price: 6150 -> 6418.20)
+// 9= L&T         (BEST overall return: +398.40% up!)
+// 10= SUNPHARMA  (Swapped -> gets ZEEL +10.94% trajectory)
 const stockConfigs = [
   {
     slot: 1,
     displayTicker: "KOTAKBANK",
-    sourceIndex: 0, // RELIANCE: Dip early then steady recovery (+50.98%)
+    sourceIndex: 0, // RELIANCE: Dip early then steady recovery (+50.98%), multiplied by 5x
     startPrice: 620.0,
+    priceMultiplier: 5,
     mode: "normal",
     returnScale: 0.85,
   },
   {
     slot: 2,
-    displayTicker: "WIPRO",
+    displayTicker: "ZOMATO",
     sourceIndex: 3, // VEDL base volatility, shaped: UP first 30m (R0..R90), then DOWN only (R90..R420)
     startPrice: 480.0,
+    priceMultiplier: 1,
     mode: "up30m_then_down",
     upPeakMult: 1.28,
     endMult: 0.72,
   },
   {
     slot: 3,
-    displayTicker: "NSE", // Will be swapped into slot 10 after RNG pass to preserve exact RNG sequence
+    displayTicker: "SUNPHARMA", // Swapped into slot 10 after RNG pass to preserve exact RNG sequence
     sourceIndex: 6, // ZEEL: Big early spike + two-way swings (+10.94% net)
     startPrice: 340.0,
+    priceMultiplier: 1,
     mode: "normal",
     returnScale: 0.9,
   },
@@ -77,55 +80,80 @@ const stockConfigs = [
     displayTicker: "JIO",
     sourceIndex: 7, // BANDHANBNK base volatility, shaped: UP first 30m (R0..R90), then DOWN only (R90..R420)
     startPrice: 750.0,
+    priceMultiplier: 1,
     mode: "up30m_then_down",
     upPeakMult: 1.34,
     endMult: 0.66,
   },
   {
     slot: 5,
-    displayTicker: "AURAMETER",
-    sourceIndex: 4, // PAYTM: Heavy crash (-52.87% net -> WORST stock overall)
-    startPrice: 890.0,
-    mode: "worst",
-    returnScale: 1.15,
+    displayTicker: "SUZLON",
+    sourceIndex: 4, // PAYTM base volatility, shaped to organizer's exact milestones:
+    // 0m: 125 -> 20m: ~200 -> 40m: ~320 -> 60m: ~220 -> 70m: ~250 -> down & down to ~60 at 120m -> last 20m close ~110 at 140m
+    startPrice: 125.0,
+    priceMultiplier: 1,
+    mode: "multi_wave",
+    waypoints: [
+      { round: 0, mult: 1.0 },      // 0m:   125.00
+      { round: 60, mult: 1.60 },    // 20m: ~200.00
+      { round: 120, mult: 2.56 },   // 40m: ~320.00
+      { round: 180, mult: 1.76 },   // 60m: ~220.00
+      { round: 210, mult: 2.00 },   // 70m: ~250.00
+      { round: 240, mult: 1.56 },   // 80m: ~195.00 (down)
+      { round: 300, mult: 0.92 },   // 100m: ~115.00 (down)
+      { round: 360, mult: 0.48 },   // 120m: ~60.00 (down near 60rs)
+      { round: 420, mult: 0.88 },   // 140m: ~110.00 (last 20m close near 110rs)
+    ],
   },
   {
     slot: 6,
-    displayTicker: "ADANIPOWER",
-    sourceIndex: 1, // ADANIENT: Huge rally up to 120m then sharp Hindenburg crash at 140m (+16.25% net)
+    displayTicker: "OLA",
+    sourceIndex: 1, // ADANIENT base volatility, shaped: UP (0-30m) -> DOWN (30-60m) -> UP (60-100m) -> DOWN & DOWN (100-140m to -50%)
     startPrice: 290.0,
-    mode: "normal",
-    returnScale: 1.0,
+    priceMultiplier: 1,
+    mode: "multi_wave",
+    waypoints: [
+      { round: 0, mult: 1.0 },     // 0m:   290.00
+      { round: 90, mult: 1.36 },   // 30m: ~394.40 (First UP)
+      { round: 180, mult: 0.81 },  // 60m: ~234.90 (Then DOWN)
+      { round: 300, mult: 1.22 },  // 100m: ~353.80 (Again UP)
+      { round: 360, mult: 0.76 },  // 120m: ~220.40 (Then DOWN...)
+      { round: 420, mult: 0.50 },  // 140m: ~145.00 (...and DOWN to -50%!)
+    ],
   },
   {
     slot: 7,
-    displayTicker: "TMPV",
-    sourceIndex: 9, // BHEL: Dip in first hour, late recovery (+4.36% net)
+    displayTicker: "TCS", // Swapped into slot 8 after RNG pass
+    sourceIndex: 9, // BHEL: Dip in first hour, late recovery (+4.36% net), multiplied by 15x
     startPrice: 410.0,
+    priceMultiplier: 15,
     mode: "normal",
     returnScale: 1.0,
   },
   {
     slot: 8,
-    displayTicker: "TCS",
+    displayTicker: "NAYKAA", // Swapped into slot 7 after RNG pass
     sourceIndex: 8, // TATASTEEL: Solid cyclical uptrend (+103.25% net)
     startPrice: 1120.0,
+    priceMultiplier: 1,
     mode: "normal",
     returnScale: 0.55,
   },
   {
     slot: 9,
     displayTicker: "L&T",
-    sourceIndex: 5, // HAL: Strongest bull run (+194.56% net -> BEST stock overall)
+    sourceIndex: 5, // HAL: Strongest bull run (+398.40% net -> BEST stock overall)
     startPrice: 540.0,
+    priceMultiplier: 1,
     mode: "best",
-    returnScale: 1.02,
+    returnScale: 1.595,
   },
   {
     slot: 10,
-    displayTicker: "RUNIVERSE", // Will be swapped into slot 3 after RNG pass
+    displayTicker: "RUNIVERSE", // Swapped into slot 3 after RNG pass
     sourceIndex: 2, // RVNL: Strong breakout (+136.88% net, second best behind L&T)
     startPrice: 820.0,
+    priceMultiplier: 1,
     mode: "normal",
     returnScale: 0.52,
   },
@@ -157,6 +185,34 @@ const rawSeries = stockConfigs.map((cfg) => {
       const nextPrice = 0.85 * rawNext + 0.15 * targetProgress;
       prices[i] = Math.max(1.0, Math.round(nextPrice * 100) / 100);
     }
+  } else if (cfg.mode === "multi_wave") {
+    // Consume random() once per round so subsequent normal stocks keep the exact same RNG state!
+    const wps = cfg.waypoints;
+    for (let i = 1; i < TOTAL_ROUNDS; i++) {
+      random(); // preserve RNG sequence for stocks 7, 8, 9, 10
+      let seg = wps.length - 2;
+      for (let w = 0; w < wps.length - 1; w++) {
+        if (i >= wps[w].round && i <= wps[w + 1].round) {
+          seg = w;
+          break;
+        }
+      }
+      const wStart = wps[seg];
+      const wEnd = wps[seg + 1];
+      const segRounds = wEnd.round - wStart.round;
+      const segProgress = (i - wStart.round) / segRounds;
+      const segRatio = wEnd.mult / wStart.mult;
+      const stepDrift = Math.pow(segRatio, 1 / segRounds) - 1;
+
+      const rawPct = originalData[i][cfg.sourceIndex].change / 100;
+      const clampedFluctuation = Math.max(-0.014, Math.min(0.014, rawPct * 0.45));
+      const targetPrice =
+        cfg.startPrice * wStart.mult * Math.pow(segRatio, segProgress);
+
+      const rawNext = prices[i - 1] * (1 + stepDrift + clampedFluctuation);
+      const nextPrice = 0.82 * rawNext + 0.18 * targetPrice;
+      prices[i] = Math.max(1.0, Math.round(nextPrice * 100) / 100);
+    }
   } else {
     for (let i = 1; i < TOTAL_ROUNDS; i++) {
       const rawPct = originalData[i][cfg.sourceIndex].change / 100;
@@ -167,12 +223,22 @@ const rawSeries = stockConfigs.map((cfg) => {
     }
   }
 
+  // Apply display multiplier (e.g. 5x for KOTAKBANK, 15x for TCS) across every round
+  const mult = cfg.priceMultiplier || 1;
+  if (mult !== 1) {
+    for (let i = 0; i < TOTAL_ROUNDS; i++) {
+      prices[i] = Math.round(prices[i] * mult * 100) / 100;
+    }
+  }
+
   return prices;
 });
 
-// Swap index 2 (Slot 3 = RUNIVERSE) and index 9 (Slot 10 = NSE) so:
-// Slot 3 is RUNIVERSE (with RVNL +136.88% series) and Slot 10 is NSE (with ZEEL +10.94% series)
-const orderedSlots = [0, 1, 9, 3, 4, 5, 6, 7, 8, 2];
+// Slot ordering after swaps:
+// - Slot 3 (RUNIVERSE) <-> Slot 10 (SUNPHARMA)
+// - Slot 5 (OLA)       <-> Slot 6 (ADANIPOWER)
+// - Slot 7 (NAYKAA)    <-> Slot 8 (TCS)
+const orderedSlots = [0, 1, 9, 3, 5, 4, 7, 6, 8, 2];
 const finalConfigs = orderedSlots.map((idx, slotIdx) => ({
   ...stockConfigs[idx],
   slot: slotIdx + 1,
