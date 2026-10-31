@@ -42,8 +42,8 @@ const random = seededRandom(seed);
 // 4= JIO         (Up first 30m, then down-down only)
 // 5= OLA         (Up -> Down -> Up -> Down & Down, ending -49.90% loss!)
 // 6= SUZLON      (125 -> ~200 -> ~320 -> ~220 -> ~250 -> ~60 -> ~110)
-// 7= NAYKAA      (Swapped with TCS -> gets TATASTEEL +103.25% cyclical rally)
-// 8= TCS         (Swapped with NAYKAA -> gets BHEL 15x price: 6150 -> 6418.20)
+// 7= NYKAA       (Swapped with TCS -> gets TATASTEEL +103.25% cyclical rally)
+// 8= TCS         (Swapped with NYKAA -> gets BHEL 15x price: 6150 -> 6418.20)
 // 9= L&T         (BEST overall return: +398.40% up!)
 // 10= SUNPHARMA  (Swapped -> gets ZEEL +10.94% trajectory)
 const stockConfigs = [
@@ -132,7 +132,7 @@ const stockConfigs = [
   },
   {
     slot: 8,
-    displayTicker: "NAYKAA", // Swapped into slot 7 after RNG pass
+    displayTicker: "NYKAA", // Swapped into slot 7 after RNG pass
     sourceIndex: 8, // TATASTEEL: Solid cyclical uptrend (+103.25% net)
     startPrice: 1120.0,
     priceMultiplier: 1,
@@ -237,7 +237,7 @@ const rawSeries = stockConfigs.map((cfg) => {
 // Slot ordering after swaps:
 // - Slot 3 (RUNIVERSE) <-> Slot 10 (SUNPHARMA)
 // - Slot 5 (OLA)       <-> Slot 6 (ADANIPOWER)
-// - Slot 7 (NAYKAA)    <-> Slot 8 (TCS)
+// - Slot 7 (NYKAA)     <-> Slot 8 (TCS)
 const orderedSlots = [0, 1, 9, 3, 5, 4, 7, 6, 8, 2];
 const finalConfigs = orderedSlots.map((idx, slotIdx) => ({
   ...stockConfigs[idx],
